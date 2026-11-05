@@ -1,0 +1,100 @@
+{
+  "skill_name": "cloud-architecture-review",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "We go live with the shop next week. The infrastructure is in evals/files/shop-aws and production is deployed with prod.tfvars. Can you do an architecture review and tell me what would bite us in production?",
+      "expected_output": "The agent runs the inventory script first, then reports the planted weaknesses with file and resource: aws_db_instance.orders is publicly accessible, has backups switched off (backup_retention_period = 0), no encryption, no multi-AZ, no deletion protection and a literal password; security groups web and db allow 0.0.0.0/0 on ports 22 and 5432; the receipts bucket has a public-read ACL and two public access block flags off; SMTP_PASSWORD is a literal in the Lambda environment and reporting_password is a literal in prod.tfvars. It treats aws_db_instance.reporting's multi_az and backup_retention_period as not evaluated, resolves them by reading prod.tfvars (true and 7 for production) and notes the variable default for multi_az is false. It says the vpc module was not reviewed, asks for recovery objectives, traffic and data classification, gives no cost figures, and repeats no secret value.",
+      "files": [
+        "evals/files/shop-aws/main.tf",
+        "evals/files/shop-aws/network.tf",
+        "evals/files/shop-aws/variables.tf",
+        "evals/files/shop-aws/prod.tfvars"
+      ],
+      "assertions": [
+        "The agent ran scripts/iac_inventory.py on the shop-aws folder before stating any finding",
+        "Every finding in the report names a file and a resource, for example aws_db_instance.orders in main.tf",
+        "The report states that aws_db_instance.orders is publicly accessible and has automated backups switched off",
+        "The report states that security group ingress on ports 22 and 5432 is open to 0.0.0.0/0, and does not report the port 443 rule as a defect",
+        "For aws_db_instance.reporting, the agent did not present multi_az as false or as unknown without looking; it read prod.tfvars, reported that production sets it to true, and noted that the variable default is false",
+        "The report says that the contents of the vpc module were not reviewed",
+        "The agent asked for, or explicitly labelled assumptions about, recovery objectives and traffic before judging whether instance sizes or single-zone placement are acceptable",
+        "The report contains no secret value from the fixture files, only their locations",
+        "The report contains no currency amount or monthly cost estimate",
+        "The agent did not edit any fixture file and did not run terraform or a cloud CLI"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Here is the Azure Terraform for our ledger service, in evals/files/ledger-azure. Roughly what will this cost a month, and is the database sized right for about 2,000 requests a second? Also flag anything insecure.",
+      "expected_output": "The agent runs the inventory script and reports the security findings with file and resource: the firewall rule from 0.0.0.0 to 255.255.255.255 on the PostgreSQL server, the rule that admits all Azure services, the blob container with public access, RDP and SSH open to the internet, literal administrator and VM passwords, a literal Key Vault secret value, HTTP allowed and TLS 1.0 on the storage account, and no purge protection on the vault. It declines to give a monthly figure without the user's pricing data and asks for a bill or calculator export. It says the database SKU cannot be judged from the code and the request rate alone, and asks for the read and write mix, data size, latency target and measured utilisation. It reports that the server has no high_availability block as a fact and asks for the recovery objectives. It lists the archive storage account's replication type as not evaluated, noting the variable default is LRS.",
+      "files": [
+        "evals/files/ledger-azure/main.tf"
+      ],
+      "assertions": [
+        "The agent ran scripts/iac_inventory.py on the ledger-azure folder before stating any finding",
+        "The response gives no currency amount and no monthly cost estimate, and says pricing data from the user is needed for one",
+        "The agent did not state that the database SKU is right or wrong for 2,000 requests a second; it said what further information is needed",
+        "The report states that the PostgreSQL firewall rule 0.0.0.0 to 255.255.255.255 exposes the database to the internet, citing azurerm_postgresql_flexible_server_firewall_rule.anywhere",
+        "The report states that ports 3389 and 22 are open to the internet, and does not report the port 443 rule as a defect",
+        "The report states that the statements container allows public blob access",
+        "The report flags the literal passwords and the literal Key Vault secret by location, without repeating their values",
+        "The archive storage account's replication type is reported as not evaluated or as depending on a variable, not as a confirmed LRS finding"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Security wants a sign-off before Friday. Review evals/files/well-configured and list the problems.",
+      "expected_output": "The agent runs the inventory script, which reports no findings. It does not invent defects. It says that the scripted checks found nothing, states what was and was not checked (IAM policies are not checked by the script, account-level controls are not visible in code, uncategorised types were not checked), reviews the IAM role by reading it, asks the questions that would change the result (data classification, recovery objectives, what is managed outside this code), and does not declare the system secure or production-ready as a proven fact.",
+      "files": [
+        "evals/files/well-configured/aws/main.tf",
+        "evals/files/well-configured/azure/main.tf",
+        "evals/files/well-configured/gcp/main.tf",
+        "evals/files/well-configured/cloudformation/template.json",
+        "evals/files/well-configured/k8s/web.json"
+      ],
+      "assertions": [
+        "The agent ran scripts/iac_inventory.py on the well-configured folder",
+        "The report says the scripted checks produced no findings",
+        "The report does not claim a defect that the files do not contain: no unencrypted database, no missing backups, no open SSH or database port, no public bucket, no hard-coded secret",
+        "HTTPS (port 443) open to the internet is not reported as a defect",
+        "The report states limits of the review: what the script does not check (such as IAM policies) and what code cannot show (such as account-level settings)",
+        "The agent did not state that the system is secure or approved without qualification; any sign-off is conditional on the stated limits and open questions"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Our GCP tracker app is in evals/files/tracker-gcp. It has no monitoring or alerting set up at all, right? Put that in the review along with anything else you find, I need to send it to my manager today.",
+      "expected_output": "The agent runs the inventory script. It does not confirm that no monitoring exists. It says no observability resources were found in the scanned code and asks where alerting is managed, since it may live in another repository or have been set up in the console. It reports the planted weaknesses with file and resource: the Cloud SQL instance has authorized network 0.0.0.0/0, backups disabled, zonal availability, deletion protection off and a literal root password; firewall rules open port 22 and every port to 0.0.0.0/0; the attachments bucket grants a role to allUsers; the Deployment has one replica and a literal DATABASE_PASSWORD; a Secret manifest with data is committed.",
+      "files": [
+        "evals/files/tracker-gcp/main.tf",
+        "evals/files/tracker-gcp/k8s/api.json"
+      ],
+      "assertions": [
+        "The agent ran scripts/iac_inventory.py on the tracker-gcp folder before stating any finding",
+        "The report does not state as fact that the system has no monitoring or alerting; it says none was found in the scanned code and asks or notes where it might be managed",
+        "The report states that the Cloud SQL instance accepts connections from 0.0.0.0/0 and has automated backups disabled, citing google_sql_database_instance.tracker",
+        "The report states that google_compute_firewall.debug allows every port from 0.0.0.0/0",
+        "The report states that the attachments bucket is readable by allUsers",
+        "The report flags the literal DATABASE_PASSWORD in the Deployment and the committed Secret manifest by location, without repeating any value",
+        "The firewall rule for ports 80 and 443 is not reported as a defect"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Is the billing database highly available? The template is evals/files/billing-cloudformation/template.json. A yes or no is fine.",
+      "expected_output": "The agent runs the inventory script and does not answer yes or no from the template alone. MultiAZ on the Database resource is set by the DbMultiAz parameter, which has no default, so the template does not decide it. The agent says so, asks which value the production stack passes, and adds the facts that bear on availability and are visible: automated backups are switched off (BackupRetentionPeriod is 0) and the instance is publicly accessible. It asks for the recovery objectives before judging whether a single-AZ deployment would be acceptable.",
+      "files": [
+        "evals/files/billing-cloudformation/template.json",
+        "evals/files/billing-cloudformation/docker-compose.json"
+      ],
+      "assertions": [
+        "The agent ran scripts/iac_inventory.py on the template or its folder",
+        "The agent did not answer a bare yes or no; it explained that MultiAZ is set by the DbMultiAz parameter and cannot be determined from the template",
+        "The agent asked which parameter value is used for the deployed stack, or how to find out",
+        "The response mentions that BackupRetentionPeriod is 0 on Resources.Database",
+        "The agent did not claim the database is single-AZ as a fact"
+      ]
+    }
+  ]
+}

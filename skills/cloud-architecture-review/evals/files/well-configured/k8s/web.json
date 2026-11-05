@@ -1,0 +1,56 @@
+[
+  {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {"name": "web", "namespace": "shop"},
+    "spec": {
+      "replicas": 3,
+      "selector": {"matchLabels": {"app": "web"}},
+      "template": {
+        "metadata": {"labels": {"app": "web"}},
+        "spec": {
+          "containers": [
+            {
+              "name": "web",
+              "image": "registry.example.com/shop/web:4.2.0",
+              "env": [
+                {"name": "LOG_LEVEL", "value": "info"},
+                {
+                  "name": "DATABASE_PASSWORD",
+                  "valueFrom": {"secretKeyRef": {"name": "web-db", "key": "password"}}
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {"name": "worker", "namespace": "shop"},
+    "spec": {
+      "selector": {"matchLabels": {"app": "worker"}},
+      "template": {
+        "metadata": {"labels": {"app": "worker"}},
+        "spec": {
+          "containers": [{"name": "worker", "image": "registry.example.com/shop/worker:4.2.0"}]
+        }
+      }
+    }
+  },
+  {
+    "apiVersion": "autoscaling/v2",
+    "kind": "HorizontalPodAutoscaler",
+    "metadata": {"name": "worker", "namespace": "shop"},
+    "spec": {
+      "scaleTargetRef": {"apiVersion": "apps/v1", "kind": "Deployment", "name": "worker"},
+      "minReplicas": 2,
+      "maxReplicas": 10,
+      "metrics": [
+        {"type": "Resource", "resource": {"name": "cpu", "target": {"type": "Utilization", "averageUtilization": 70}}}
+      ]
+    }
+  }
+]

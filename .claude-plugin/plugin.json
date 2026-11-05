@@ -1,0 +1,12 @@
+{
+  "name": "cloud-architecture-review",
+  "description": "Reviews a system's cloud architecture against reliability, security and cost pillars from its infrastructure code, starting from a scripted inventory that reports what it could not evaluate instead of guessing.",
+  "author": {
+    "name": "Muhammad Waseem Panhwar",
+    "url": "https://github.com/panhwerwaseem"
+  },
+  "homepage": "https://github.com/panhwerwaseem/cloud-architecture-review",
+  "repository": "https://github.com/panhwerwaseem/cloud-architecture-review",
+  "license": "MIT",
+  "keywords": ["cloud", "architecture-review", "terraform", "cloudformation", "infrastructure-as-code", "agent-skills"]
+}

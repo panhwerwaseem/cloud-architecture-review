@@ -1,0 +1,102 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Billing service. Eval fixture: the weaknesses are planted. Password-like values are made-up placeholders.",
+  "Parameters": {
+    "DbPassword": {
+      "Type": "String",
+      "NoEcho": true,
+      "Default": "example-only-not-a-real-password"
+    },
+    "DbMultiAz": {
+      "Type": "String",
+      "AllowedValues": ["true", "false"]
+    },
+    "ImageId": {
+      "Type": "AWS::EC2::Image::Id"
+    }
+  },
+  "Resources": {
+    "Database": {
+      "Type": "AWS::RDS::DBInstance",
+      "Properties": {
+        "Engine": "mysql",
+        "DBInstanceClass": "db.m6g.large",
+        "AllocatedStorage": "50",
+        "MasterUsername": "billing",
+        "MasterUserPassword": {"Ref": "DbPassword"},
+        "MultiAZ": {"Ref": "DbMultiAz"},
+        "PubliclyAccessible": true,
+        "BackupRetentionPeriod": 0,
+        "VPCSecurityGroups": [{"Fn::GetAtt": ["DbSecurityGroup", "GroupId"]}]
+      }
+    },
+    "DbSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Billing database",
+        "SecurityGroupIngress": [
+          {"IpProtocol": "tcp", "FromPort": 3306, "ToPort": 3306, "CidrIp": "0.0.0.0/0"}
+        ]
+      }
+    },
+    "InvoiceBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "AccessControl": "PublicRead",
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": false,
+          "BlockPublicPolicy": false,
+          "IgnorePublicAcls": false,
+          "RestrictPublicBuckets": false
+        }
+      }
+    },
+    "InvoiceTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "BillingMode": "PAY_PER_REQUEST",
+        "AttributeDefinitions": [{"AttributeName": "invoice_id", "AttributeType": "S"}],
+        "KeySchema": [{"AttributeName": "invoice_id", "KeyType": "HASH"}]
+      }
+    },
+    "Worker": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {"Ref": "ImageId"},
+        "InstanceType": "t3.large"
+      }
+    },
+    "ExportRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {"Effect": "Allow", "Principal": {"Service": "lambda.amazonaws.com"}, "Action": "sts:AssumeRole"}
+          ]
+        }
+      }
+    },
+    "ExportFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Runtime": "python3.12",
+        "Handler": "export.handler",
+        "Role": {"Fn::GetAtt": ["ExportRole", "Arn"]},
+        "Code": {"S3Bucket": "billing-artifacts-example", "S3Key": "export.zip"},
+        "Environment": {
+          "Variables": {
+            "PAYMENT_API_KEY": "example-only-not-a-real-key",
+            "EXPORT_BUCKET": {"Ref": "InvoiceBucket"}
+          }
+        }
+      }
+    },
+    "ExportLogs": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/billing-export"
+      }
+    }
+  }
+}

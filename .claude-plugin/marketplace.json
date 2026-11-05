@@ -1,0 +1,15 @@
+{
+  "name": "panhwerwaseem-cloud-architecture-review",
+  "owner": {
+    "name": "Muhammad Waseem Panhwar",
+    "url": "https://github.com/panhwerwaseem"
+  },
+  "description": "Single-skill marketplace for cloud-architecture-review.",
+  "plugins": [
+    {
+      "name": "cloud-architecture-review",
+      "source": "./",
+      "description": "Reviews a system's cloud architecture against reliability, security and cost pillars from its infrastructure code, starting from a scripted inventory that reports what it could not evaluate instead of guessing."
+    }
+  ]
+}

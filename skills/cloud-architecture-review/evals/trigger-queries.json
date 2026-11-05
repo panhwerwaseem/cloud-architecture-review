@@ -1,0 +1,27 @@
+{
+  "skill_name": "cloud-architecture-review",
+  "should_trigger": [
+    "can you do an architecture review of our infra? the terraform is in ./infra",
+    "we launch next week, is our AWS setup production ready",
+    "do a well-architected review of this CloudFormation template",
+    "are there any single points of failure in our Azure terraform",
+    "check our GCP terraform for anything exposed to the internet",
+    "security wants a review of the infrastructure code before sign-off",
+    "does our database have backups and multi-AZ? look at the terraform",
+    "audit this repo's IaC for hard-coded passwords and unencrypted storage",
+    "review our cloud architecture for reliability and cost, we run EKS plus RDS",
+    "we inherited this infra repo, give me an inventory of what it deploys and what's risky"
+  ],
+  "should_not_trigger": [
+    "review this terraform plan output before I apply it",
+    "write a terraform module for an RDS postgres instance with multi-AZ",
+    "terraform apply fails with a state lock error, help",
+    "why is our AWS bill 40% higher this month, here's the cost explorer export",
+    "my pods keep getting OOMKilled, look at the deployment and fix the limits",
+    "design an architecture for a new real-time chat app on AWS",
+    "convert this CloudFormation template to Terraform",
+    "upgrade the aws provider from v4 to v5 and fix the deprecations",
+    "scan our container images for CVEs",
+    "explain the difference between multi-AZ and a read replica"
+  ]
+}
